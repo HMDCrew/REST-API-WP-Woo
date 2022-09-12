@@ -69,6 +69,7 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 			}
 
 			// Plugin token registration new user routes
+			// NOTE: PLEASE CHANGE THIS TOKEN 'MySuperSecretToken'
 			if ( ! defined( 'REST_API_WORDPRESS_PLUGIN_TOKEN' ) ) {
 				define( 'REST_API_WORDPRESS_PLUGIN_TOKEN', 'MySuperSecretToken' );
 			}
