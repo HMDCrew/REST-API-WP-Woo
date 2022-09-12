@@ -85,6 +85,19 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 
 					$user->set_role( 'pending' );
 
+					/**
+					 * Add token to user on response
+					 *
+					 * Plugin: JWT Authentication for WP REST API
+					 * @link https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/
+					 */
+					if ( class_exists( 'Jwt_Auth_Public' ) ) {
+						$test  = new Jwt_Auth_Public( 'jwt-auth', '1.1.0' );
+						$token = $test->generate_token( $request );
+
+						$user->token = $token['token'];
+					}
+
 					wp_send_json(
 						array(
 							'status'  => ( ! empty( $user ) ? 'success' : 'error' ),
