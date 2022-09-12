@@ -14,7 +14,6 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 		public static function instance() {
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof RegistrationApiWordpressWP ) ) {
 				self::$instance = new RegistrationApiWordpressWP;
-				// self::$instance->includes();
 				self::$instance->hooks();
 			}
 
@@ -38,7 +37,7 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 				'rest-api-wordpress',
 				'/wpr-register',
 				array(
-					'methods'  => 'GET',
+					'methods'  => 'POST',
 					'callback' => array( $this, 'wpr_register_callback' ),
 				)
 			);
