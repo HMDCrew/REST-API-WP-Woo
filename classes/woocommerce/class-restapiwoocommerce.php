@@ -24,7 +24,7 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 		 * Action/filter hooks
 		 */
 		public function hooks() {
-			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_woocommerce_routes' ) );
+			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_woocommerce_routes' ), 10 );
 		}
 
 		public function wpr_rest_api_woocommerce_routes( $server ) {

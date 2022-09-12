@@ -25,7 +25,7 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 		 * Action/filter hooks
 		 */
 		public function hooks() {
-			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_wordpress_routes' ) );
+			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_wordpress_routes' ), 10 );
 		}
 
 		public function includes() {
