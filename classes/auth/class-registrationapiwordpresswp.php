@@ -24,14 +24,14 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 		 * Action/filter hooks
 		 */
 		public function hooks() {
-			add_action( 'init', 'wpr_user_roles', 10 );
+			add_action( 'init', array( $this, 'wpr_user_roles' ), 10 );
 			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_auth_routes' ), 10 );
 		}
 
 		/**
 		 * It creates a new user role called "pending" and gives it the ability to read
 		 */
-		private function wpr_user_roles() {
+		public function wpr_user_roles() {
 			add_role(
 				'pending',
 				'Pending approval user',
