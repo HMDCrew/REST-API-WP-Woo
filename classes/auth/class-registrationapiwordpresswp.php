@@ -24,7 +24,7 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 		 * Action/filter hooks
 		 */
 		public function hooks() {
-			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_wordpress_routes' ) );
+			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_auth_routes' ) );
 		}
 
 		/**
@@ -32,7 +32,7 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 		 *
 		 * @param server The server object.
 		 */
-		public function wpr_rest_api_wordpress_routes( $server ) {
+		public function wpr_rest_api_auth_routes( $server ) {
 			$server->register_route(
 				'rest-api-wordpress',
 				'/wpr-register',
@@ -52,15 +52,18 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 
 			$params = $request->get_params();
 
-			$user       = preg_replace( '/[^a-zA-Z0-9\.\_\-]/', '', $params['username'] );
-			$email      = preg_replace( '/[^a-zA-Z0-9\_\-\@\.]/', '', $params['email'] );
-			$pass       = preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['password'] );
-			$chack_pass = preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['repeat_password'] );
-			$token      = preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['plugin_token'] );
+			$user       = isset( $params['username'] ) ? preg_replace( '/[^a-zA-Z0-9\.\_\-]/', '', $params['username'] ) : false;
+			$email      = isset( $params['email'] ) ? preg_replace( '/[^a-zA-Z0-9\_\-\@\.]/', '', $params['email'] ) : false;
+			$pass       = isset( $params['password'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['password'] ) : false;
+			$chack_pass = isset( $params['repeat_password'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['repeat_password'] ) : false;
+			$token      = isset( $params['plugin_token'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['plugin_token'] ) : false;
 
 			if ( REST_API_WORDPRESS_PLUGIN_TOKEN === $token ) {
 
-				if ( ! username_exists( $user ) && ! email_exists( $email ) && md5( $pass ) === md5( $chack_pass ) ) {
+				if (
+					( ! empty( $user ) && ! empty( $email ) && ! empty( $pass ) && ! empty( $chack_pass ) ) &&
+					( ! username_exists( $user ) && ! email_exists( $email ) && md5( $pass ) === md5( $chack_pass ) )
+				) {
 
 					$user_id = wp_create_user( $user, $pass, $email );
 					$user    = new WP_User( $user_id );
@@ -76,14 +79,20 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 				}
 
 				$error_msg = array();
-				if ( md5( $pass ) === md5( $chack_pass ) ) {
+				if ( empty( $pass ) || empty( $chack_pass ) || md5( $pass ) !== md5( $chack_pass ) ) {
 					$error_msg[] = 'please verify passwords';
 				}
-				if ( username_exists( $user ) ) {
+				if ( ! empty( $user ) && username_exists( $user ) ) {
 					$error_msg[] = 'username already used';
 				}
-				if ( email_exists( $email ) ) {
+				if ( empty( $user ) ) {
+					$error_msg[] = 'missing username';
+				}
+				if ( ! empty( $email ) && email_exists( $email ) ) {
 					$error_msg[] = 'email already used';
+				}
+				if ( empty( $email ) ) {
+					$error_msg[] = 'missing email';
 				}
 
 				if ( ! empty( $error_msg ) ) {
