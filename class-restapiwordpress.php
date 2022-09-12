@@ -78,9 +78,11 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 		public function includes() {
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-restapiwoocommerce.php' );
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-restapiwordpresswp.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'auth/class-registrationapiwordpresswp.php' );
 
 			\RestApiWooCommerce::instance();
 			\RestApiWordpressWP::instance();
+			\RegistrationApiWordpressWP::instance();
 		}
 	}
 
