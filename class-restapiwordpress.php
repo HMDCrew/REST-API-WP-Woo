@@ -67,6 +67,11 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 			if ( ! defined( 'REST_API_WORDPRESS_PLUGIN_DIR_URL' ) ) {
 				define( 'REST_API_WORDPRESS_PLUGIN_DIR_URL', trailingslashit( plugin_dir_url( REST_API_WORDPRESS_PLUGIN_FILE ) ) );
 			}
+
+			// Plugin token registration new user routes
+			if ( ! defined( 'REST_API_WORDPRESS_PLUGIN_TOKEN' ) ) {
+				define( 'REST_API_WORDPRESS_PLUGIN_TOKEN', 'MySuperSecretToken' );
+			}
 		}
 
 		public function includes() {
