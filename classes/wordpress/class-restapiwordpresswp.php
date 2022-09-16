@@ -58,7 +58,7 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 				'rest-api-wordpress',
 				'/wpr-get-taxonomy',
 				array(
-					'methods'  => 'GET',
+					'methods'  => 'POST',
 					'callback' => array( $this, 'wpr_get_taxonomy_callback' ),
 				)
 			);
@@ -145,11 +145,11 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 
 			$params = $request->get_params();
 
-			$taxonomy   = preg_replace( '/[^a-zA-Z0-9\-\_]/i', '', $params['taxonomy'] );
-			$hide_empty = preg_replace( '/[^0-1]/i', '', $params['hide_empty'] );
+			$taxonomy   = ( ! empty( $params['taxonomy'] ) ? preg_replace( '/[^a-zA-Z0-9\-\_]/i', '', $params['taxonomy'] ) : 'category' );
+			$hide_empty = ( ! empty( $params['hide_empty'] ) ? preg_replace( '/[^0-1]/i', '', $params['hide_empty'] ) : '0' );
 
 			$args = array(
-				'taxonomy'   => ( ! empty( $taxonomy ) ? $taxonomy : 'category' ),
+				'taxonomy'   => $taxonomy,
 				'hide_empty' => ( '0' !== $hide_empty ? true : false ),
 			);
 
@@ -176,7 +176,7 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 			wp_send_json(
 				array(
 					'status'  => ( ! empty( $terms_mapped ) ? 'success' : 'error' ),
-					'message' => ( ! empty( $terms_mapped ) ? $terms_mapped : "there isn't meta" ),
+					'message' => ( ! empty( $terms_mapped ) ? $terms_mapped : "there isn't taxonomys" ),
 				)
 			);
 		}
