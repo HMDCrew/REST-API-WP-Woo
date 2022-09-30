@@ -28,6 +28,7 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof RestApiWordpress ) ) {
 				self::$instance = new RestApiWordpress;
 				self::$instance->constants();
+				self::$instance->hooks();
 				self::$instance->includes();
 			}
 
@@ -75,6 +76,23 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 			}
 		}
 
+		/**
+		 * It disables the nonce check for the WooCommerce REST API.
+		 */
+		public function hooks() {
+			// add_action(
+			// 	'plugins_loaded',
+			// 	function() {
+			// 		if ( is_user_logged_in() ) {
+			// 			add_filter( 'woocommerce_store_api_disable_nonce_check', '__return_true' );
+			// 		}
+			// 	}
+			// );
+		}
+
+		/**
+		 * It includes the files that are required for the plugin to work.
+		 */
 		public function includes() {
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-restapiwoocommerce.php' );
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-restapiwordpresswp.php' );

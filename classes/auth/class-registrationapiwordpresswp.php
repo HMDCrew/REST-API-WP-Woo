@@ -95,7 +95,9 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 						$test  = new Jwt_Auth_Public( 'jwt-auth', '1.1.0' );
 						$token = $test->generate_token( $request );
 
-						$user->token = $token['token'];
+						if ( ! empty( $token['token'] ) ) {
+							$user->token = $token['token'];
+						}
 					}
 
 					wp_send_json(

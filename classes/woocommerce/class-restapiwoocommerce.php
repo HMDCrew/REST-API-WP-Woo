@@ -10,14 +10,25 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 	class RestApiWooCommerce {
 
 		private static $instance;
+		public $update_cart;
 
 		public static function instance() {
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof RestApiWooCommerce ) ) {
 				self::$instance = new RestApiWooCommerce;
+				self::$instance->includes();
 				self::$instance->hooks();
 			}
 
 			return self::$instance;
+		}
+
+		/**
+		 * It includes the files that are required for the plugin to work.
+		 */
+		public function includes() {
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/cart/class-updatecart.php' );
+
+			$this->update_cart = new UpdateCart;
 		}
 
 		/**
@@ -42,6 +53,22 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 				array(
 					'methods'  => 'POST',
 					'callback' => array( $this, 'wpr_get_product_callback' ),
+				)
+			);
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-update-cart',
+				array(
+					'methods'  => 'POST',
+					'callback' => array( $this, 'wpr_update_cart_callback' ),
+				)
+			);
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-get-nonce',
+				array(
+					'methods'  => 'GET',
+					'callback' => array( $this, 'wpr_get_woocommerce_nonce_callback' ),
 				)
 			);
 		}
@@ -136,6 +163,43 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 				array(
 					'status'  => ( ! empty( $product_data ) ? 'success' : 'error' ),
 					'message' => ( ! empty( $product_data ) ? $product_data : 'Product not exist' ),
+				)
+			);
+		}
+
+		public function wpr_update_cart_callback( \WP_REST_Request $request ) {
+
+			$params        = $request->get_params();
+			$update_status = false;
+
+			foreach ( $params['cart'] as $item ) {
+
+				$update_item_qty = $this->update_cart->update_item_qty( $item );
+
+				if ( ! $update_status ) {
+					$update_status = $update_item_qty;
+				}
+			}
+
+			wp_send_json(
+				array(
+					'status'  => ( $update_status ? 'success' : 'error' ),
+					'message' => ( $update_status ? 'cart updated' : 'haven\'t updates for cart' ),
+				)
+			);
+		}
+
+		/**
+		 * It creates a nonce and returns it as a JSON response
+		 */
+		public function wpr_get_woocommerce_nonce_callback() {
+
+			$nonce = wp_create_nonce( 'wc_store_api' );
+
+			wp_send_json(
+				array(
+					'status'  => ( ! empty( $nonce ) ? 'success' : 'error' ),
+					'message' => ( ! empty( $nonce ) ? $nonce : 'error generate nonce' ),
 				)
 			);
 		}
