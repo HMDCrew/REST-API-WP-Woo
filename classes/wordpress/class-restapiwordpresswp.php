@@ -65,6 +65,24 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 		}
 
 		/**
+		 * It gets the post meta values for the given post id and meta keys.
+		 *
+		 * @param int post_id The ID of the post you want to get the meta values from.
+		 * @param array meta_keys An array of meta keys to get the values for.
+		 *
+		 * @return An array of meta values.
+		 */
+		public function wpr_get_post_metas( int $post_id, array $meta_keys ) {
+
+			$meta_values = array();
+			foreach ( $meta_keys as $key ) {
+				$meta_values[ $key ] = get_post_meta( $post_id, $key, true );
+			}
+
+			return $meta_values;
+		}
+
+		/**
 		 * It gets the posts from the database and returns them in a JSON format
 		 *
 		 * @param \WP_REST_Request request The request object.
@@ -73,8 +91,9 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 
 			$params = $request->get_params();
 
-			$post_type   = preg_replace( '/[^a-zA-Z0-9\_\-]/', '', $params['post_type'] );
-			$numberposts = preg_replace( '/[^0-9\-]/i', '', $params['numberposts'] );
+			$post_type     = preg_replace( '/[^a-zA-Z0-9\_\-]/', '', $params['post_type'] );
+			$numberposts   = preg_replace( '/[^0-9\-]/i', '', $params['numberposts'] );
+			$include_metas = preg_replace( '/[^a-zA-Z0-9\,\_\-\[\]]/', '', $params['include_metas'] );
 
 			$args = array(
 				'post_type'   => ( ! empty( $post_type ) ? $post_type : 'post' ),
@@ -82,6 +101,8 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 			);
 
 			$postslist = get_posts( $args );
+
+			$include_metas = explode( ',', str_replace( array( '[', ']' ), '', $include_metas ) );
 
 			foreach ( $postslist as $key => $value ) {
 				unset( $postslist[ $key ]->post_author );
@@ -102,8 +123,9 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 				unset( $postslist[ $key ]->comment_status );
 				unset( $postslist[ $key ]->ping_status );
 
-				$postslist[ $key ]->guid  = get_permalink( $postslist[ $key ]->ID );
-				$postslist[ $key ]->image = get_the_post_thumbnail_url( $postslist[ $key ]->ID, 'full' );
+				$postslist[ $key ]->include_metas = $this->wpr_get_post_metas( $postslist[ $key ]->ID, $include_metas );
+				$postslist[ $key ]->guid          = get_permalink( $postslist[ $key ]->ID );
+				$postslist[ $key ]->image         = get_the_post_thumbnail_url( $postslist[ $key ]->ID, 'full' );
 			}
 
 			wp_send_json(
@@ -112,6 +134,7 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 					'message' => ( ! empty( $postslist ) ? $postslist : "there isn't posts" ),
 				)
 			);
+			exit();
 		}
 
 		/**

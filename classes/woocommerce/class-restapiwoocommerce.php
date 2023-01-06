@@ -5,6 +5,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use \Stripe\Stripe;
+use \Stripe\PaymentIntent;
+
 if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 
 	class RestApiWooCommerce {
@@ -39,6 +42,18 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 		}
 
 		public function wpr_rest_api_woocommerce_routes( $server ) {
+
+			// API
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-get-nonce',
+				array(
+					'methods'  => 'GET',
+					'callback' => array( $this, 'wpr_get_woocommerce_nonce_callback' ),
+				)
+			);
+
+			// Store
 			$server->register_route(
 				'rest-api-wordpress',
 				'/wpr-get-products',
@@ -55,6 +70,8 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 					'callback' => array( $this, 'wpr_get_product_callback' ),
 				)
 			);
+
+			// Cart
 			$server->register_route(
 				'rest-api-wordpress',
 				'/wpr-update-cart',
@@ -63,16 +80,66 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 					'callback' => array( $this, 'wpr_update_cart_callback' ),
 				)
 			);
+
+			// Chackout
 			$server->register_route(
 				'rest-api-wordpress',
-				'/wpr-get-nonce',
+				'/wpr-payment-gateway',
 				array(
 					'methods'  => 'GET',
-					'callback' => array( $this, 'wpr_get_woocommerce_nonce_callback' ),
+					'callback' => array( $this, 'wpr_payment_gateway_callback' ),
+				)
+			);
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-chackout-fields',
+				array(
+					'methods'  => 'GET',
+					'callback' => array( $this, 'wpr_get_chackout_fields' ),
+				)
+			);
+
+			// Order
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-create-order',
+				array(
+					'methods'  => 'POST',
+					'callback' => array( $this, 'create_new_order_post' ),
+				)
+			);
+
+			// Payment
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-stripe-payment',
+				array(
+					'methods'  => 'POST',
+					'callback' => array( $this, 'payment_api_request' ),
 				)
 			);
 		}
 
+		/**
+		 * It creates a nonce and returns it as a JSON response
+		 */
+		public function wpr_get_woocommerce_nonce_callback() {
+
+			$nonce = wp_create_nonce( 'wc_store_api' );
+
+			wp_send_json(
+				array(
+					'status'  => ( ! empty( $nonce ) ? 'success' : 'error' ),
+					'message' => ( ! empty( $nonce ) ? $nonce : 'error generate nonce' ),
+				)
+			);
+		}
+
+		/**
+		 * It gets the products from the database and returns them in a JSON format
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
 		public function wpr_get_products_callback( \WP_REST_Request $request ) {
 
 			$params = $request->get_params();
@@ -82,29 +149,45 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 			$page        = ( ! empty( $params['page'] ) ? preg_replace( '/[^0-9]/i', '', $params['page'] ) : 0 );
 
 			$args = array(
-				'status' => 'publish',
-				'limit'  => $numberposts,
-				'page'   => $page,
+				'post_type'      => 'product',
+				'post_status'    => 'publish',
+				'numberposts'    => $numberposts,
+				'fields'         => 'ids',
+				'posts_per_page' => $page,
+				'meta_query'     => array(
+					'relation' => 'AND',
+					array(
+						'key'     => '_sku',
+						'value'   => '',
+						'compare' => 'NOT IN',
+					),
+				),
 			);
 
 			if ( ! empty( $categorys ) ) {
 
 				$categorys = json_decode( $categorys, true );
+				$terms     = array();
 
 				if ( isset( $categorys['slug'] ) ) {
-					$args['category'][] = $categorys['slug'];
+					$terms = $categorys['slug'];
 				} else {
 					foreach ( $categorys as $tax ) {
-						$args['category'][] = $tax['slug'];
+						$terms[] = $tax['slug'];
 					}
 				}
+
+				$args['tax_query'][] = array(
+					'taxonomy' => 'category',
+					'field'    => 'slug',
+					'terms'    => $terms,
+				);
 			}
 
-			$products = wc_get_products( $args );
-
+			$products_ids = get_posts( $args );
 			$prod_garbage = array();
-			foreach ( $products as $product ) {
-				$data = (array) $product->get_data();
+			foreach ( $products_ids as $prod_id ) {
+				$data = (array) wc_get_product( $prod_id )->get_data();
 
 				unset( $data['date_created'] );
 				unset( $data['date_modified'] );
@@ -142,6 +225,11 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 			);
 		}
 
+		/**
+		 * It takes a product ID, gets the product data, and returns it as a JSON object
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
 		public function wpr_get_product_callback( \WP_REST_Request $request ) {
 
 			$params = $request->get_params();
@@ -167,6 +255,11 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 			);
 		}
 
+		/**
+		 * It updates the cart.
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
 		public function wpr_update_cart_callback( \WP_REST_Request $request ) {
 
 			$params        = $request->get_params();
@@ -190,18 +283,124 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 		}
 
 		/**
-		 * It creates a nonce and returns it as a JSON response
+		 * ?
+		 * Need restriction for payment gateway
+		 *
+		 * @return void
 		 */
-		public function wpr_get_woocommerce_nonce_callback() {
+		public function wpr_payment_gateway_callback() {
+			$gateways = WC()->payment_gateways->get_available_payment_gateways();
+			wp_send_json(
+				array(
+					'status'  => ( ! empty( $gateways ) ? 'success' : 'error' ),
+					'message' => ( ! empty( $gateways ) ? $gateways : 'haven\'t gateway for payments' ),
+				)
+			);
+		}
 
-			$nonce = wp_create_nonce( 'wc_store_api' );
+		/**
+		 * It gets the checkout fields from WooCommerce and sends them back to the browser as a JSON object
+		 */
+		public function wpr_get_chackout_fields() {
+
+			$chackout_fields = WC()->checkout()->checkout_fields;
 
 			wp_send_json(
 				array(
-					'status'  => ( ! empty( $nonce ) ? 'success' : 'error' ),
-					'message' => ( ! empty( $nonce ) ? $nonce : 'error generate nonce' ),
+					'status'  => ( ! empty( $chackout_fields ) ? 'success' : 'error' ),
+					'message' => ( ! empty( $chackout_fields ) ? $chackout_fields : 'Woocommerce problem with chackout fields' ),
 				)
 			);
+		}
+
+		/**
+		 * ?
+		 * add preg_replace => for security risck in $_POST array
+		 *
+		 * @return void
+		 */
+		public function create_new_order_post( \WP_REST_Request $request ) {
+
+			$params = $request->get_params();
+
+			$address        = array();
+			$missing_fields = validate_chackout_fields( $params['form_fields'] );
+			if ( empty( $missing_fields ) ) {
+				foreach ( $params['form_fields'] as $field ) {
+					$name             = str_replace( 'billing_', '', preg_replace( '/[^a-zA-Z0-9\_\-\s]/i', '', $field['name'] ) );
+					$address[ $name ] = preg_replace( '/[^a-zA-Z0-9\.\@\_\-\s]/i', '', $field['value'] );
+				}
+
+				$order  = wc_create_order();
+				$userid = get_current_user_id();
+				if ( $userid ) {
+					update_post_meta( $order->get_id(), '_customer_user', $userid );
+				}
+
+				foreach ( $params['cart']['cart'] as $cart_item_key => $values ) {
+					$order->add_product(
+						wc_get_product( preg_replace( '/[^0-9]/i', '', $values['id'] ) ),
+						preg_replace( '/[^0-9]/i', '', $values['quantity'] ),
+						array(
+							'variation' => $values['variation'],
+							'totals'    => $values['totals'],
+						)
+					);
+				}
+
+				$order->set_address( $address, 'billing' );
+				$order->calculate_totals();
+				$order->save();
+
+				wp_send_json(
+					array(
+						'status'  => ( ! empty( $order ) ? 'success' : 'error' ),
+						'message' => ( ! empty( $order ) ? $order->get_data() : 'Order has been not created' ),
+					)
+				);
+			} else {
+				wp_send_json(
+					array(
+						'status'  => 'error',
+						'message' => 'missing fields',
+						'fields'  => $missing_fields,
+					)
+				);
+			}
+		}
+
+		/**
+		 * ?
+		 * Preg_replace missing
+		 *
+		 * @param \WP_REST_Request $request
+		 * @return void
+		 */
+		public function payment_api_request( \WP_REST_Request $request ) {
+
+			$params = $request->get_params();
+
+			if ( isset( $params['paymentMethodId'] ) ) {
+
+				Stripe::setApiKey( 'sk_test_51LnfxgFr4Sza9qfAyAnnwbzTzHdQKCfcGowRZjuGloRtjLYL0HvhUkqTWaowbgDZEUTotOqwPtAvskkBN45NBGiR007v7Qv9UF' );
+
+				$intent = PaymentIntent::create(
+					array(
+						'payment_method'      => $params['paymentMethodId'],
+						'amount'              => 3099,
+						'currency'            => 'usd',
+						'confirmation_method' => 'manual',
+						'confirm'             => true,
+					)
+				);
+
+				wp_send_json(
+					array(
+						'status'  => ( ! empty( $intent ) ? 'success' : 'error' ),
+						'message' => ( ! empty( $intent ) ? $intent : 'Order has been not created' ),
+					)
+				);
+			}
 		}
 	}
 

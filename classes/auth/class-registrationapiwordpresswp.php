@@ -67,11 +67,14 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 
 			$params = $request->get_params();
 
-			$user       = isset( $params['username'] ) ? preg_replace( '/[^a-zA-Z0-9\.\_\-]/', '', $params['username'] ) : false;
-			$email      = isset( $params['email'] ) ? preg_replace( '/[^a-zA-Z0-9\_\-\@\.]/', '', $params['email'] ) : false;
-			$pass       = isset( $params['password'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['password'] ) : false;
-			$chack_pass = isset( $params['repeat_password'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['repeat_password'] ) : false;
-			$token      = isset( $params['plugin_token'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['plugin_token'] ) : false;
+			error_log( 'params: ' . print_r( $params, true ) );
+
+			$name       = isset( $params['name'] ) ? preg_replace( '/[^a-zA-Z0-9\s\.\_\-]/', '', $params['name'] ) : '';
+			$user       = isset( $params['username'] ) ? preg_replace( '/[^a-zA-Z0-9\.\_\-]/', '', $params['username'] ) : '';
+			$email      = isset( $params['email'] ) ? preg_replace( '/[^a-zA-Z0-9\_\-\@\.]/', '', $params['email'] ) : '';
+			$pass       = isset( $params['password'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['password'] ) : '';
+			$chack_pass = isset( $params['repeat_password'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['repeat_password'] ) : '';
+			$token      = isset( $params['plugin_token'] ) ? preg_replace( '/[^a-zA-Z0-9\_\$\!\#\,\s\-]/', '', $params['plugin_token'] ) : '';
 
 			if ( REST_API_WORDPRESS_PLUGIN_TOKEN === $token ) {
 
@@ -85,6 +88,15 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 
 					$user->set_role( 'pending' );
 
+					if ( ! empty( $name ) ) {
+						wp_update_user(
+							array(
+								'ID'           => $user->ID,
+								'display_name' => $name,
+							)
+						);
+					}
+
 					/**
 					 * Add token to user on response
 					 *
@@ -95,7 +107,7 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 						$test  = new Jwt_Auth_Public( 'jwt-auth', '1.1.0' );
 						$token = $test->generate_token( $request );
 
-						if ( ! empty( $token['token'] ) ) {
+						if ( ! is_a( $token, 'WP_Error' ) && ! empty( $token['token'] ) ) {
 							$user->token = $token['token'];
 						}
 					}

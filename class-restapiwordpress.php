@@ -3,7 +3,7 @@
  * Plugin Name: REST API WP/Woo
  * Plugin URI: #
  * Description:
- * Version: 0.0.1
+ * Version: 0.0.2
  * Author: Andrei Leca
  * Author URI:
  * Text Domain: WordPress
@@ -11,7 +11,7 @@
  * License URI: http://www.opensource.org/licenses/gpl-license.php
  */
 
-namespace RestApiWordpress;
+namespace Hmd\RestApiWordpress;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -94,6 +94,7 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 		 * It includes the files that are required for the plugin to work.
 		 */
 		public function includes() {
+			require_once( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' );
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-restapiwoocommerce.php' );
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-restapiwordpresswp.php' );
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'auth/class-registrationapiwordpresswp.php' );
