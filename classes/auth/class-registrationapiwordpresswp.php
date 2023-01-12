@@ -67,8 +67,6 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 
 			$params = $request->get_params();
 
-			error_log( 'params: ' . print_r( $params, true ) );
-
 			$name       = isset( $params['name'] ) ? preg_replace( '/[^a-zA-Z0-9\s\.\_\-]/', '', $params['name'] ) : '';
 			$user       = isset( $params['username'] ) ? preg_replace( '/[^a-zA-Z0-9\.\_\-]/', '', $params['username'] ) : '';
 			$email      = isset( $params['email'] ) ? preg_replace( '/[^a-zA-Z0-9\_\-\@\.]/', '', $params['email'] ) : '';
@@ -104,6 +102,9 @@ if ( ! class_exists( 'RegistrationApiWordpressWP' ) ) :
 					 * @link https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/
 					 */
 					if ( class_exists( 'Jwt_Auth_Public' ) ) {
+
+						$request->set_param( 'username', $user->user_login );
+
 						$test  = new Jwt_Auth_Public( 'jwt-auth', '1.1.0' );
 						$token = $test->generate_token( $request );
 

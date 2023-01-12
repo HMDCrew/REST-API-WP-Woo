@@ -107,4 +107,5 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 
 endif;
 
-RestApiWordpress::instance();
+add_action( 'plugins_loaded', array( RestApiWordpress::class, 'instance' ) );
+// RestApiWordpress::instance();
