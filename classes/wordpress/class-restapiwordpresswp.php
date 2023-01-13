@@ -48,6 +48,14 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 			);
 			$server->register_route(
 				'rest-api-wordpress',
+				'/wpr-get-post',
+				array(
+					'methods'  => 'GET',
+					'callback' => array( $this, 'wpr_get_post_callback' ),
+				)
+			);
+			$server->register_route(
+				'rest-api-wordpress',
 				'/wpr-get-post-meta',
 				array(
 					'methods'  => 'GET',
@@ -91,14 +99,21 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 
 			$params = $request->get_params();
 
-			$post_type     = preg_replace( '/[^a-zA-Z0-9\_\-]/', '', $params['post_type'] );
-			$numberposts   = preg_replace( '/[^0-9\-]/i', '', $params['numberposts'] );
-			$include_metas = preg_replace( '/[^a-zA-Z0-9\,\_\-\[\]]/', '', $params['include_metas'] );
+			$post_type     = ( ! empty( $params['post_type'] ) ? preg_replace( '/[^a-zA-Z0-9\_\-]/', '', $params['post_type'] ) : 'post' );
+			$numberposts   = ( ! empty( $params['numberposts'] ) ? preg_replace( '/[^0-9\-]/i', '', $params['numberposts'] ) : 5 );
+			$include_metas = ( ! empty( $params['include_metas'] ) ? preg_replace( '/[^a-zA-Z0-9\,\_\-\[\]]/', '', $params['include_metas'] ) : '' );
+			$page          = ( ! empty( $params['page'] ) ? preg_replace( '/[^0-9]/i', '', $params['page'] ) : 0 );
+			$search        = ( ! empty( $params['search'] ) ? preg_replace( '/[^0-9a-zA-Z\{\}\(\)\"\[\]\/\s\:\,\.\_\-]/i', '', $params['search'] ) : '' );
 
 			$args = array(
-				'post_type'   => ( ! empty( $post_type ) ? $post_type : 'post' ),
-				'numberposts' => ( ! empty( $numberposts ) ? $numberposts : 5 ),
+				'post_type'   => $post_type,
+				'numberposts' => $numberposts,
+				'paged'       => $page,
 			);
+
+			if ( ! empty( $search ) ) {
+				$args['s'] = $search;
+			}
 
 			$postslist = get_posts( $args );
 
@@ -134,6 +149,47 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 					'message' => ( ! empty( $postslist ) ? $postslist : "there isn't posts" ),
 				)
 			);
+			exit();
+		}
+
+		/**
+		 * It gets a post by ID and returns it as JSON.
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
+		public function wpr_get_post_callback( \WP_REST_Request $request ) {
+
+			$params = $request->get_params();
+
+			$post_id = ( ! empty( $params['post_id'] ) ? preg_replace( '/[^0-9\-]/i', '', $params['post_id'] ) : 5 );
+
+			$post = get_post( $post_id );
+
+			unset( $post->post_author );
+			unset( $post->post_date );
+			unset( $post->post_date_gmt );
+			unset( $post->post_content );
+			unset( $post->post_status );
+			unset( $post->post_password );
+			unset( $post->to_ping );
+			unset( $post->pinged );
+			unset( $post->post_modified );
+			unset( $post->post_modified_gmt );
+			unset( $post->post_content_filtered );
+			unset( $post->menu_order );
+			unset( $post->post_mime_type );
+			unset( $post->comment_count );
+			unset( $post->filter );
+			unset( $post->comment_status );
+			unset( $post->ping_status );
+
+			wp_send_json(
+				array(
+					'status'  => ( ! empty( $post ) ? 'success' : 'error' ),
+					'message' => ( ! empty( $post ) ? $post : 'post not found' ),
+				)
+			);
+
 			exit();
 		}
 
