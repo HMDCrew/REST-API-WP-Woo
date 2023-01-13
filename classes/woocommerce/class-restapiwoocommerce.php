@@ -145,16 +145,17 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 			$params = $request->get_params();
 
 			$numberposts = ( ! empty( $params['numberposts'] ) ? preg_replace( '/[^0-9\-]/i', '', $params['numberposts'] ) : 5 );
-			$categorys   = ( ! empty( $params['category'] ) ? preg_replace( '/[^0-9a-zA-Z\{\}\(\)\"\[\]\/\s\:\,\.\_\-]/i', '', $params['category'] ) : false );
+			$categorys   = ( ! empty( $params['category'] ) ? preg_replace( '/[^0-9a-zA-Z\{\}\(\)\"\[\]\/\s\:\,\.\_\-]/i', '', $params['category'] ) : '' );
 			$page        = ( ! empty( $params['page'] ) ? preg_replace( '/[^0-9]/i', '', $params['page'] ) : 0 );
+			$search      = ( ! empty( $params['search'] ) ? preg_replace( '/[^0-9a-zA-Z\{\}\(\)\"\[\]\/\s\:\,\.\_\-]/i', '', $params['search'] ) : '' );
 
 			$args = array(
-				'post_type'      => 'product',
-				'post_status'    => 'publish',
-				'numberposts'    => $numberposts,
-				'fields'         => 'ids',
-				'posts_per_page' => $page,
-				'meta_query'     => array(
+				'post_type'   => 'product',
+				'post_status' => 'publish',
+				'numberposts' => $numberposts,
+				'fields'      => 'ids',
+				'paged'       => $page,
+				'meta_query'  => array(
 					'relation' => 'AND',
 					array(
 						'key'     => '_sku',
@@ -163,6 +164,10 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 					),
 				),
 			);
+
+			if ( ! empty( $search ) ) {
+				$args['s'] = $search;
+			}
 
 			if ( ! empty( $categorys ) ) {
 
