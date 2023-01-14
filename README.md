@@ -39,7 +39,8 @@ optional 'name' information ex:
    "plugin_token": "MySuperSecretToken"
 }
 ```
-    NOTE: plugin_token is a constant defined REST_API_WORDPRESS_PLUGIN_TOKEN on file 'class-rest-api-wordpress.php'
+    NOTE: plugin_token is a constant defined REST_API_WORDPRESS_PLUGIN_TOKEN in file
+          'class-rest-api-wordpress.php'
 
 ### Pasts management:
     route: /wp-json/wpr-get-posts
