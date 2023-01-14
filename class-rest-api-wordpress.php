@@ -3,7 +3,7 @@
  * Plugin Name: REST API WP/Woo
  * Plugin URI: #
  * Description:
- * Version: 0.0.3
+ * Version: 0.0.4
  * Author: Andrei Leca
  * Author URI:
  * Text Domain: WordPress
@@ -27,7 +27,6 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WordPress ) ) {
 				self::$instance = new Rest_Api_WordPress;
 				self::$instance->constants();
-				self::$instance->hooks();
 				self::$instance->includes();
 			}
 
@@ -76,20 +75,6 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 		}
 
 		/**
-		 * It disables the nonce check for the WooCommerce REST API.
-		 */
-		public function hooks() {
-			// add_action(
-			// 	'plugins_loaded',
-			// 	function() {
-			// 		if ( is_user_logged_in() ) {
-			// 			add_filter( 'woocommerce_store_api_disable_nonce_check', '__return_true' );
-			// 		}
-			// 	}
-			// );
-		}
-
-		/**
 		 * It includes the files that are required for the plugin to work.
 		 */
 		public function includes() {
@@ -107,4 +92,3 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 endif;
 
 add_action( 'plugins_loaded', array( Rest_Api_WordPress::class, 'instance' ) );
-// RestApiWordpress::instance();
