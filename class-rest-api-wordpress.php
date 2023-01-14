@@ -3,30 +3,29 @@
  * Plugin Name: REST API WP/Woo
  * Plugin URI: #
  * Description:
- * Version: 0.0.2
+ * Version: 0.0.3
  * Author: Andrei Leca
  * Author URI:
  * Text Domain: WordPress
- * License: GPL-2.0+
- * License URI: http://www.opensource.org/licenses/gpl-license.php
+ * License: MIT
  */
 
-namespace Hmd\RestApiWordpress;
+namespace Hmd\Rest_Api_WordPress;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'RestApiWordpress' ) ) :
+if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 
-	class RestApiWordpress {
+	class Rest_Api_WordPress {
 
 		private static $instance;
 
 		public static function instance() {
-			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof RestApiWordpress ) ) {
-				self::$instance = new RestApiWordpress;
+			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WordPress ) ) {
+				self::$instance = new Rest_Api_WordPress;
 				self::$instance->constants();
 				self::$instance->hooks();
 				self::$instance->includes();
@@ -95,17 +94,17 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 		 */
 		public function includes() {
 			require_once( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' );
-			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-restapiwoocommerce.php' );
-			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-restapiwordpresswp.php' );
-			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'auth/class-registrationapiwordpresswp.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-rest-api-woocommerce.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-rest-api-wordpresswp.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'auth/class-registration-api-wordpresswp.php' );
 
-			\RestApiWooCommerce::instance();
-			\RestApiWordpressWP::instance();
-			\RegistrationApiWordpressWP::instance();
+			\Rest_Api_WooCommerce::instance();
+			\Rest_Api_WordpressWP::instance();
+			\Registration_Api_WordpressWP::instance();
 		}
 	}
 
 endif;
 
-add_action( 'plugins_loaded', array( RestApiWordpress::class, 'instance' ) );
+add_action( 'plugins_loaded', array( Rest_Api_WordPress::class, 'instance' ) );
 // RestApiWordpress::instance();

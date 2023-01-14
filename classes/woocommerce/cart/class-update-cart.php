@@ -5,15 +5,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'UpdateCart' ) ) :
+if ( ! class_exists( 'Update_Cart' ) ) :
 
-	class UpdateCart {
+	class Update_Cart {
 
 		private static $instance;
 
 		public static function instance() {
-			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof UpdateCart ) ) {
-				self::$instance = new UpdateCart;
+			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Update_Cart ) ) {
+				self::$instance = new Update_Cart;
 			}
 
 			return self::$instance;
@@ -38,4 +38,4 @@ if ( ! class_exists( 'UpdateCart' ) ) :
 
 endif;
 
-UpdateCart::instance();
+Update_Cart::instance();

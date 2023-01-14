@@ -8,16 +8,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 use \Stripe\Stripe;
 use \Stripe\PaymentIntent;
 
-if ( ! class_exists( 'RestApiWooCommerce' ) ) :
+if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 
-	class RestApiWooCommerce {
+	class Rest_Api_WooCommerce {
 
 		private static $instance;
 		public $update_cart;
 
 		public static function instance() {
-			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof RestApiWooCommerce ) ) {
-				self::$instance = new RestApiWooCommerce;
+			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WooCommerce ) ) {
+				self::$instance = new Rest_Api_WooCommerce;
 				self::$instance->includes();
 				self::$instance->hooks();
 			}
@@ -29,9 +29,9 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 		 * It includes the files that are required for the plugin to work.
 		 */
 		public function includes() {
-			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/cart/class-updatecart.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/cart/class-update-cart.php' );
 
-			$this->update_cart = new UpdateCart;
+			$this->update_cart = new Update_Cart;
 		}
 
 		/**
@@ -411,4 +411,4 @@ if ( ! class_exists( 'RestApiWooCommerce' ) ) :
 
 endif;
 
-RestApiWooCommerce::instance();
+Rest_Api_WooCommerce::instance();

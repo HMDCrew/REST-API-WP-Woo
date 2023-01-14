@@ -5,15 +5,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'RestApiWordpress' ) ) :
+if ( ! class_exists( 'Rest_Api_WordpressWP' ) ) :
 
-	class RestApiWordpressWP {
+	class Rest_Api_WordpressWP {
 
 		private static $instance;
 
 		public static function instance() {
-			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof RestApiWordpressWP ) ) {
-				self::$instance = new RestApiWordpressWP;
+			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WordpressWP ) ) {
+				self::$instance = new Rest_Api_WordpressWP;
 				self::$instance->includes();
 				self::$instance->hooks();
 			}
@@ -263,4 +263,4 @@ if ( ! class_exists( 'RestApiWordpress' ) ) :
 
 endif;
 
-RestApiWordpressWP::instance();
+Rest_Api_WordpressWP::instance();
