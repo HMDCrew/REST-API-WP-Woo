@@ -15,17 +15,9 @@ if ( ! class_exists( 'Rest_Api_WordpressWP' ) ) :
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WordpressWP ) ) {
 				self::$instance = new Rest_Api_WordpressWP;
 				self::$instance->includes();
-				self::$instance->hooks();
 			}
 
 			return self::$instance;
-		}
-
-		/**
-		 * Action/filter hooks
-		 */
-		public function hooks() {
-			add_action( 'rest_api_init', array( $this, 'wpr_rest_api_wordpress_routes' ), 10 );
 		}
 
 		public function includes() {
