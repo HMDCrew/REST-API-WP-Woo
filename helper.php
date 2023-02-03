@@ -103,6 +103,8 @@ if ( ! function_exists( 'wpr_get_url_screen' ) ) {
 	 *
 	 * @return array response from the API.
 	 */
+
+	// API key https://rapidapi.com/Cobbex/api/screen-it2
 	function wpr_get_url_screen( string $url ) {
 
 		$curl = curl_init();
@@ -131,7 +133,7 @@ if ( ! function_exists( 'wpr_get_url_screen' ) ) {
 				),
 				CURLOPT_HTTPHEADER     => array(
 					'X-RapidAPI-Host: screen-it2.p.rapidapi.com',
-					'X-RapidAPI-Key: 77bc1a30eamsha0c29e7a0814603p19ceffjsnd0ad03731219',
+					'X-RapidAPI-Key: API KEY',
 					'content-type: application/json',
 				),
 			)
