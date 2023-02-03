@@ -12,6 +12,7 @@ if ( ! class_exists( 'Rest_Api_Post_Type' ) ) :
 		private static $instance;
 
 		public static function instance() {
+
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_Post_Type ) ) {
 				self::$instance = new Rest_Api_Post_Type;
 				self::$instance->hooks();
@@ -47,6 +48,14 @@ if ( ! class_exists( 'Rest_Api_Post_Type' ) ) :
 				array(
 					'methods'  => 'GET',
 					'callback' => array( $this, 'wpr_get_post_callback' ),
+				)
+			);
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-get-post-content',
+				array(
+					'methods'  => 'GET',
+					'callback' => array( $this, 'wpr_get_post_content_callback' ),
 				)
 			);
 		}
@@ -166,6 +175,20 @@ if ( ! class_exists( 'Rest_Api_Post_Type' ) ) :
 					'message' => ( ! empty( $post ) ? $post : 'post not found' ),
 				)
 			);
+
+			exit();
+		}
+
+		public function wpr_get_post_content_callback( \WP_REST_Request $request ) {
+
+			header( 'Content-Type: text/html' );
+			error_reporting( 0 );
+
+			$params = $request->get_params();
+
+			$post_id = ( ! empty( $params['post_id'] ) ? preg_replace( '/[^0-9\-]/i', '', $params['post_id'] ) : 5 );
+
+			echo wpr_get_post_content( $post_id );
 
 			exit();
 		}

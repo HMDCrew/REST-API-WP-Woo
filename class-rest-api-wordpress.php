@@ -37,6 +37,9 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 		 * Constants
 		 */
 		public function constants() {
+			
+			$upload = wp_get_upload_dir();
+
 			// Plugin version
 			if ( ! defined( 'REST_API_WORDPRESS_PLUGIN_VERSION' ) ) {
 				define( 'REST_API_WORDPRESS_PLUGIN_VERSION', '0.0.1' );
@@ -65,6 +68,16 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 			// Plugin directory URL
 			if ( ! defined( 'REST_API_WORDPRESS_PLUGIN_DIR_URL' ) ) {
 				define( 'REST_API_WORDPRESS_PLUGIN_DIR_URL', trailingslashit( plugin_dir_url( REST_API_WORDPRESS_PLUGIN_FILE ) ) );
+			}
+
+			// Upload folder for contents
+			if ( ! defined( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_PATH' ) ) {
+				define( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_PATH', trailingslashit( $upload['basedir'] . '/rest_api_imgs' ) );
+			}
+			
+			// Upload folder url for contents
+			if ( ! defined( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_URL' ) ) {
+				define( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_URL', trailingslashit( $upload['baseurl'] . '/rest_api_imgs' ) );
 			}
 
 			// Plugin token registration new user routes

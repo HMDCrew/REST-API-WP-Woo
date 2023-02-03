@@ -1,5 +1,10 @@
 {
     "name": "hmd/rest-api-wordpress",
+    "config": {
+        "platform": {
+            "php": "7.4"
+        }
+    },
     "require": {
         "stripe/stripe-php": "^9.6"
     },

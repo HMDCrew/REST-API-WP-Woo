@@ -70,6 +70,14 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 					'callback' => array( $this, 'wpr_get_product_callback' ),
 				)
 			);
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-get-product-content',
+				array(
+					'methods'  => 'GET',
+					'callback' => array( $this, 'wpr_get_product_content_callback' ),
+				)
+			);
 
 			// Cart
 			$server->register_route(
@@ -118,6 +126,30 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 					'callback' => array( $this, 'payment_api_request' ),
 				)
 			);
+		}
+
+		/**
+		 * It takes a product ID, and returns the product's content, with the necessary CSS and JS files to
+		 * make it look like the content editor in the WordPress admin
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
+		public function wpr_get_product_content_callback( \WP_REST_Request $request ) {
+
+			header( 'Content-Type: text/html' );
+			error_reporting( 0 );
+			ini_set( 'display_errors', false );
+
+			$params     = $request->get_params();
+			$product_id = ( ! empty( $params['product_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['product_id'] ) : 0 );
+
+			echo wpr_get_post_content(
+				$product_id,
+				get_stylesheet_directory_uri() . '/assets/css/admin/rich_content.css',
+				get_stylesheet_directory_uri() . '/assets/js/rich_content.js'
+			);
+
+			exit();
 		}
 
 		/**
@@ -245,12 +277,22 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 			$product_data = (array) $product->get_data();
 
 			foreach ( $product_data['gallery_image_ids'] as $key => $id_img ) {
-				$image = wp_get_attachment_image_url( $id_img, 'medium' );
+				$image = wp_get_attachment_image_url( $id_img, 'full' );
 
 				$product_data['gallery_image_ids'][ $key ] = ( $image ? $image : wc_placeholder_img_src( 'medium' ) );
 			}
 
-			$product_data['symbol'] = html_entity_decode( get_woocommerce_currency_symbol() );
+			$img_content_name = sprintf( '%d_post_content.jpg', $product_data['id'] );
+			$img_path         = sprintf( '%s/%s', WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_PATH, $img_content_name );
+			$img_url          = sprintf( '%s%s', WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_URL, $img_content_name );
+
+			if ( ! file_exists( $img_path ) ) {
+				$screen = scheen_product_content( $product_data['id'] );
+				save_scheen_content( $screen['data']['screenshot_url'], $img_path );
+			}
+
+			$product_data['symbol']         = html_entity_decode( get_woocommerce_currency_symbol() );
+			$product_data['content_screen'] = $img_url;
 
 			wp_send_json(
 				array(
