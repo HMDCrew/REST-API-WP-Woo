@@ -214,7 +214,7 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 					}
 				}
 
-				$args['tax_query'][] = array(
+				$args['tax_query'] = array(
 					'taxonomy' => 'category',
 					'field'    => 'slug',
 					'terms'    => $terms,
