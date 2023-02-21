@@ -37,7 +37,7 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 		 * Constants
 		 */
 		public function constants() {
-			
+
 			$upload = wp_get_upload_dir();
 
 			// Plugin version
@@ -74,7 +74,7 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 			if ( ! defined( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_PATH' ) ) {
 				define( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_PATH', trailingslashit( $upload['basedir'] . '/rest_api_imgs' ) );
 			}
-			
+
 			// Upload folder url for contents
 			if ( ! defined( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_URL' ) ) {
 				define( 'WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_URL', trailingslashit( $upload['baseurl'] . '/rest_api_imgs' ) );
@@ -91,7 +91,11 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 		 * It includes the files that are required for the plugin to work.
 		 */
 		public function includes() {
-			require_once( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' );
+
+			if ( file_exists( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' ) ) {
+				require_once( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' );
+			}
+
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-rest-api-woocommerce.php' );
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-rest-api-wordpresswp.php' );
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'auth/class-registration-api-wordpresswp.php' );
