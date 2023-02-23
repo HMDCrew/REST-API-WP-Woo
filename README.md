@@ -113,6 +113,43 @@ optional 'name' information ex:
    "product_id": 10,
 }
 ```
+<br />
+
+    route: /wp-json/wpr-get-product-content
+    method: GET
+    informations get woocommerce product content:
+```JSON
+{
+   "product_id": 10,
+}
+```
+### Cart management:
+#### Cart routes need JWT on header request 
+    route: /wp-json/wpr-get-cart
+    method: POST
+<br />
+
+    route: /wp-json/wpr-update-cart
+    method: POST
+    informations get woocommerce product content:
+```JSON
+{
+   "cart": (use format from route /wp-json/wpr-get-cart),
+}
+```
+<br />
+
+    route: /wp-json/wpr-add-to-cart
+    method: POST
+    informations get woocommerce product content:
+```JSON
+{
+   "product_id": 10,
+   "variation_id": 0,
+   "qty": 0
+}
+```
+
 ### Chackout utility:
 
     route: /wp-json/wpr-chackout-fields
