@@ -146,7 +146,7 @@ optional 'name' information ex:
 {
    "product_id": 10,
    "variation_id": 0,
-   "qty": 0
+   "qty": 1
 }
 ```
 
