@@ -82,10 +82,29 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 			// Cart
 			$server->register_route(
 				'rest-api-wordpress',
-				'/wpr-update-cart',
+				'/wpr-get-cart',
 				array(
-					'methods'  => 'POST',
-					'callback' => array( $this, 'wpr_update_cart_callback' ),
+					'methods'       => 'POST',
+					'callback'      => array( $this, 'wpr_get_cart_callback' ),
+					'login_user_id' => get_current_user_id(),
+				)
+			);
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-update-qty',
+				array(
+					'methods'       => 'POST',
+					'callback'      => array( $this, 'wpr_update_cart_callback' ),
+					'login_user_id' => get_current_user_id(),
+				)
+			);
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-add-to-cart',
+				array(
+					'methods'       => 'POST',
+					'callback'      => array( $this, 'wpr_add_to_cart_callback' ),
+					'login_user_id' => get_current_user_id(),
 				)
 			);
 
@@ -129,30 +148,6 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 		}
 
 		/**
-		 * It takes a product ID, and returns the product's content, with the necessary CSS and JS files to
-		 * make it look like the content editor in the WordPress admin
-		 *
-		 * @param \WP_REST_Request request The request object.
-		 */
-		public function wpr_get_product_content_callback( \WP_REST_Request $request ) {
-
-			header( 'Content-Type: text/html' );
-			error_reporting( 0 );
-			ini_set( 'display_errors', false );
-
-			$params     = $request->get_params();
-			$product_id = ( ! empty( $params['product_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['product_id'] ) : 0 );
-
-			echo wpr_get_post_content(
-				$product_id,
-				get_stylesheet_directory_uri() . '/assets/css/admin/rich_content.css',
-				get_stylesheet_directory_uri() . '/assets/js/rich_content.js'
-			);
-
-			exit();
-		}
-
-		/**
 		 * It creates a nonce and returns it as a JSON response
 		 */
 		public function wpr_get_woocommerce_nonce_callback() {
@@ -174,6 +169,8 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 		 */
 		public function wpr_get_products_callback( \WP_REST_Request $request ) {
 
+			wpr_hide_php_errors();
+
 			$params = $request->get_params();
 
 			$numberposts = ( ! empty( $params['numberposts'] ) ? preg_replace( '/[^0-9\-]/i', '', $params['numberposts'] ) : 5 );
@@ -194,6 +191,11 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 						'value'   => '',
 						'compare' => 'NOT IN',
 					),
+					array(
+						'key'     => '_price',
+						'value'   => '',
+						'compare' => 'NOT IN',
+					),
 				),
 			);
 
@@ -201,23 +203,11 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 				$args['s'] = $search;
 			}
 
-			if ( ! empty( $categorys ) ) {
-
-				$categorys = json_decode( $categorys, true );
-				$terms     = array();
-
-				if ( isset( $categorys['slug'] ) ) {
-					$terms = $categorys['slug'];
-				} else {
-					foreach ( $categorys as $tax ) {
-						$terms[] = $tax['slug'];
-					}
-				}
-
-				$args['tax_query'] = array(
-					'taxonomy' => 'category',
+			if ( ! empty( $categorys ) && isset( $categorys['slug'] ) ) {
+				$args['tax_query'][] = array(
+					'taxonomy' => 'product_cat',
 					'field'    => 'slug',
-					'terms'    => $terms,
+					'terms'    => explode( ',', $categorys['slug'] ),
 				);
 			}
 
@@ -303,30 +293,125 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 		}
 
 		/**
+		 * It takes a product ID, and returns the product's content, with the necessary CSS and JS files to
+		 * make it look like the content editor in the WordPress admin
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
+		public function wpr_get_product_content_callback( \WP_REST_Request $request ) {
+
+			header( 'Content-Type: text/html' );
+			wpr_hide_php_errors();
+
+			$params     = $request->get_params();
+			$product_id = ( ! empty( $params['product_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['product_id'] ) : 0 );
+
+			echo wpr_get_post_content(
+				$product_id,
+				get_stylesheet_directory_uri() . '/assets/css/admin/rich_content.css',
+				get_stylesheet_directory_uri() . '/assets/js/rich_content.js'
+			);
+
+			exit();
+		}
+
+		/**
+		 * It gets the cart of the user.
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
+		public function wpr_get_cart_callback( \WP_REST_Request $request ) {
+
+			wpr_hide_php_errors();
+
+			$attrs    = $request->get_attributes();
+			$response = array(
+				'status'  => 'error',
+				'message' => 'error get_current_user_id',
+			);
+
+			if ( isset( $attrs['login_user_id'] ) ) {
+				$cart = $this->update_cart->wpr_get_cart(
+					intval( $attrs['login_user_id'] )
+				);
+
+				$response['status']  = ( $cart ? 'success' : 'error' );
+				$response['message'] = ( $cart ? $cart : 'error on wpr_get_cart' );
+			}
+
+			wp_send_json( $response );
+			exit();
+		}
+
+		/**
 		 * It updates the cart.
 		 *
 		 * @param \WP_REST_Request request The request object.
 		 */
 		public function wpr_update_cart_callback( \WP_REST_Request $request ) {
 
-			$params        = $request->get_params();
-			$update_status = false;
+			wpr_hide_php_errors();
 
-			foreach ( $params['cart'] as $item ) {
+			$params = $request->get_params();
+			$attrs  = $request->get_attributes();
 
-				$update_item_qty = $this->update_cart->update_item_qty( $item );
+			$response = array(
+				'status'  => 'error',
+				'message' => 'error get_current_user_id',
+			);
 
-				if ( ! $update_status ) {
-					$update_status = $update_item_qty;
-				}
+			if ( isset( $attrs['login_user_id'] ) ) {
+
+				$update_status = $this->update_cart->update_cart_from_api(
+					intval( $attrs['login_user_id'] ),
+					$params['cart']
+				);
+
+				$response['status']  = ( ! empty( $update_status['items'] ) ? 'success' : 'error' );
+				$response['message'] = ( ! empty( $update_status['items'] ) ? $update_status : 'cart is empty' );
 			}
 
-			wp_send_json(
-				array(
-					'status'  => ( $update_status ? 'success' : 'error' ),
-					'message' => ( $update_status ? 'cart updated' : 'haven\'t updates for cart' ),
-				)
+			wp_send_json( $response );
+			exit();
+		}
+
+		/**
+		 * It add product to the cart.
+		 *
+		 * @param \WP_REST_Request request The request object.
+		 */
+		public function wpr_add_to_cart_callback( \WP_REST_Request $request ) {
+
+			header( 'Content-Type: text/html' );
+			wpr_hide_php_errors();
+
+			$attrs  = $request->get_attributes();
+			$params = $request->get_params();
+
+			$product_id   = ( ! empty( $params['product_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['product_id'] ) : 0 );
+			$qty          = ( ! empty( $params['qty'] ) ? preg_replace( '/[^0-9]/i', '', $params['qty'] ) : 0 );
+			$variation_id = ( ! empty( $params['variation_id'] ) ? preg_replace( '/[^0-9a-zA-Z\s\.\,\-\_\!\?\(\)\[\]]/i', '', $params['variation_id'] ) : 0 );
+
+			$response = array(
+				'status'  => 'error',
+				'message' => 'product not added tu cart contact admin function generate error get_current_user_id',
 			);
+
+			if ( isset( $attrs['login_user_id'] ) ) {
+
+				$user_cart_product = $this->update_cart->wpr_wc_add_to_cart(
+					intval( $attrs['login_user_id'] ),
+					$product_id,
+					$qty,
+					$variation_id
+				);
+
+				$response['status']  = ( $user_cart_product ? 'success' : 'error' );
+				$response['message'] = ( $user_cart_product ? $user_cart_product : 'product not added tu cart' );
+			}
+
+			wp_send_json( $response );
+			exit();
 		}
 
 		/**

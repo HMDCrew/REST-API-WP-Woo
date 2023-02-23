@@ -27,6 +27,7 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WordPress ) ) {
 				self::$instance = new Rest_Api_WordPress;
 				self::$instance->constants();
+				self::$instance->hooks();
 				self::$instance->includes();
 			}
 
@@ -87,11 +88,24 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 			}
 		}
 
+		public function hooks() {
+			add_filter( 'jwt_auth_token_before_dispatch', array( $this, 'jwt_auth_function' ), 10, 2 );
+		}
+
+		/**
+		 * Insert some additional data to the JWT Auth plugin
+		 */
+		public function jwt_auth_function( $data, $user ) {
+			$data['user_role'] = $user->roles;
+			$data['user_id']   = $user->ID;
+			$data['avatar']    = get_avatar_url( $user->ID );
+			return $data;
+		}
+
 		/**
 		 * It includes the files that are required for the plugin to work.
 		 */
 		public function includes() {
-
 			if ( file_exists( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' ) ) {
 				require_once( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' );
 			}

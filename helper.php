@@ -212,3 +212,14 @@ if ( ! function_exists( 'wpr_get_post_content' ) ) {
 		);
 	}
 }
+
+
+if ( ! function_exists( 'wpr_hide_php_errors' ) ) {
+	/**
+	 * It hides PHP errors.
+	 */
+	function wpr_hide_php_errors() {
+		error_reporting( 0 );
+		ini_set( 'display_errors', false );
+	}
+}
