@@ -43,6 +43,16 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 
 		public function wpr_rest_api_woocommerce_routes( $server ) {
 
+			$server->register_route(
+				'rest-api-wordpress',
+				'/wpr-test-route',
+				array(
+					'methods'       => 'GET',
+					'callback'      => array( $this, 'wpr_get_woocommerce_test_route_callback' ),
+					'login_user_id' => get_current_user_id(),
+				)
+			);
+
 			// API
 			$server->register_route(
 				'rest-api-wordpress',
@@ -91,7 +101,7 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 			);
 			$server->register_route(
 				'rest-api-wordpress',
-				'/wpr-update-qty',
+				'/wpr-update-cart',
 				array(
 					'methods'       => 'POST',
 					'callback'      => array( $this, 'wpr_update_cart_callback' ),
@@ -145,6 +155,33 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 					'callback' => array( $this, 'payment_api_request' ),
 				)
 			);
+		}
+
+		public function wpr_get_woocommerce_test_route_callback( \WP_REST_Request $request ) {
+
+			$attrs = $request->get_attributes();
+
+			if ( isset( $attrs['login_user_id'] ) && intval( $attrs['login_user_id'] ) > 0 ) {
+
+				$user_id = intval( $attrs['login_user_id'] );
+				// WC()->customer = new WC_Customer( $user_id, true );
+
+				// $user_cart = get_user_meta( $user_id, '_woocommerce_persistent_cart_1', true );
+				// $wc_cart   = WC()->cart->get_cart();
+
+				// $cart_for_meta = array();
+				// foreach ( $wc_cart as $key => $cart_product ) {
+				// 	$cart_for_meta[ $key ] = $this->clean_for_meta_cart_product( $cart_product );
+				// }
+
+				// update_user_meta( $user_id, '_woocommerce_persistent_cart_1', array( 'cart' => $cart_for_meta ) );
+
+				// $full_user_meta['cart'] = WC()->cart->get_cart();
+				// var_dump( $wc_cart );
+				// $product_stock = $product->get_stock_quantity();
+			}
+
+			exit();
 		}
 
 		/**
