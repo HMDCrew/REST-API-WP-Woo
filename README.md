@@ -157,10 +157,7 @@ optional 'name' information ex:
     additional information is not required for this request 
 
 ## Future routes:
-    
-    route: /wp-json/wpr-update-cart
-    method: GET
-    
+
     route: /wp-json/wpr-payment-gateway
     method: GET
     
