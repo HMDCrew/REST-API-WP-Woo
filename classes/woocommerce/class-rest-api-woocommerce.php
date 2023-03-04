@@ -309,17 +309,7 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 				$product_data['gallery_image_ids'][ $key ] = ( $image ? $image : wc_placeholder_img_src( 'medium' ) );
 			}
 
-			$img_content_name = sprintf( '%d_post_content.jpg', $product_data['id'] );
-			$img_path         = sprintf( '%s/%s', WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_PATH, $img_content_name );
-			$img_url          = sprintf( '%s%s', WPR_REST_API_WORDPRESS_PLUGIN_UPLOAD_DIR_URL, $img_content_name );
-
-			if ( ! file_exists( $img_path ) ) {
-				$screen = scheen_product_content( $product_data['id'] );
-				save_scheen_content( $screen['data']['screenshot_url'], $img_path );
-			}
-
-			$product_data['symbol']         = html_entity_decode( get_woocommerce_currency_symbol() );
-			$product_data['content_screen'] = $img_url;
+			$product_data['symbol'] = html_entity_decode( get_woocommerce_currency_symbol() );
 
 			wp_send_json(
 				array(
@@ -361,16 +351,15 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 
 			wpr_hide_php_errors();
 
-			$attrs    = $request->get_attributes();
 			$response = array(
 				'status'  => 'error',
 				'message' => 'error get_current_user_id',
 			);
 
-			if ( isset( $attrs['login_user_id'] ) ) {
-				$cart = $this->update_cart->wpr_get_cart(
-					intval( $attrs['login_user_id'] )
-				);
+			$user_id = wpr_auth_api_user_id( $request );
+
+			if ( $user_id ) {
+				$cart = $this->update_cart->wpr_get_cart( $user_id );
 
 				$response['status']  = ( $cart ? 'success' : 'error' );
 				$response['message'] = ( $cart ? $cart : 'error on wpr_get_cart' );
@@ -390,19 +379,17 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 			wpr_hide_php_errors();
 
 			$params = $request->get_params();
-			$attrs  = $request->get_attributes();
 
 			$response = array(
 				'status'  => 'error',
 				'message' => 'error get_current_user_id',
 			);
 
-			if ( isset( $attrs['login_user_id'] ) ) {
+			$user_id = wpr_auth_api_user_id( $request );
 
-				$update_status = $this->update_cart->update_cart_from_api(
-					intval( $attrs['login_user_id'] ),
-					$params['cart']
-				);
+			if ( $user_id ) {
+
+				$update_status = $this->update_cart->update_cart_from_api( $user_id, $params['cart'] );
 
 				$response['status']  = ( ! empty( $update_status['items'] ) ? 'success' : 'error' );
 				$response['message'] = ( ! empty( $update_status['items'] ) ? $update_status : 'cart is empty' );
@@ -419,10 +406,8 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 		 */
 		public function wpr_add_to_cart_callback( \WP_REST_Request $request ) {
 
-			header( 'Content-Type: text/html' );
 			wpr_hide_php_errors();
 
-			$attrs  = $request->get_attributes();
 			$params = $request->get_params();
 
 			$product_id   = ( ! empty( $params['product_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['product_id'] ) : 0 );
@@ -434,10 +419,12 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 				'message' => 'product not added tu cart contact admin function generate error get_current_user_id',
 			);
 
-			if ( isset( $attrs['login_user_id'] ) ) {
+			$user_id = wpr_auth_api_user_id( $request );
+
+			if ( $user_id ) {
 
 				$user_cart_product = $this->update_cart->wpr_wc_add_to_cart(
-					intval( $attrs['login_user_id'] ),
+					$user_id,
 					$product_id,
 					$qty,
 					$variation_id

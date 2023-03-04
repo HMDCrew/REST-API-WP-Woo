@@ -32,6 +32,7 @@ if ( ! function_exists( 'sub_category_mapping' ) ) {
 	}
 }
 
+
 if ( ! function_exists( 'validate_chackout_fields' ) ) {
 	/**
 	 * It takes an array of form fields and returns an array of missing fields
@@ -66,34 +67,36 @@ if ( ! function_exists( 'validate_chackout_fields' ) ) {
 	}
 }
 
-if ( ! function_exists( 'scheen_post_content' ) ) {
-	/**
-	 * It takes a post ID, and returns a screenshot of the post's content
-	 *
-	 * @param int post_id The ID of the post you want to screenshot.
-	 *
-	 * @return array.
-	 */
-	function scheen_post_content( int $post_id ) {
-		return wpr_get_url_screen(
-			sprintf( '%s/wp-json/wpr-get-post-content?post_id=%d', home_url(), $post_id )
-		);
-	}
-}
-if ( ! function_exists( 'scheen_product_content' ) ) {
-	/**
-	 * It takes a product ID, and returns a screenshot of the post's content
-	 *
-	 * @param int product_id The ID of the post you want to screenshot.
-	 *
-	 * @return array.
-	 */
-	function scheen_product_content( int $product_id ) {
-		return wpr_get_url_screen(
-			sprintf( '%s/wp-json/wpr-get-product-content?product_id=%d', home_url(), $product_id )
-		);
-	}
-}
+
+// if ( ! function_exists( 'scheen_post_content' ) ) {
+// 	/**
+// 	 * It takes a post ID, and returns a screenshot of the post's content
+// 	 *
+// 	 * @param int post_id The ID of the post you want to screenshot.
+// 	 *
+// 	 * @return array.
+// 	 */
+// 	function scheen_post_content( int $post_id ) {
+// 		return wpr_get_url_screen(
+// 			sprintf( '%s/wp-json/wpr-get-post-content?post_id=%d', home_url(), $post_id )
+// 		);
+// 	}
+// }
+// if ( ! function_exists( 'scheen_product_content' ) ) {
+// 	/**
+// 	 * It takes a product ID, and returns a screenshot of the post's content
+// 	 *
+// 	 * @param int product_id The ID of the post you want to screenshot.
+// 	 *
+// 	 * @return array.
+// 	 */
+// 	function scheen_product_content( int $product_id ) {
+// 		return wpr_get_url_screen(
+// 			sprintf( '%s/wp-json/wpr-get-product-content?product_id=%d', home_url(), $product_id )
+// 		);
+// 	}
+// }
+
 
 if ( ! function_exists( 'wpr_get_url_screen' ) ) {
 	/**
@@ -139,7 +142,7 @@ if ( ! function_exists( 'wpr_get_url_screen' ) ) {
 			)
 		);
 
-		$response = curl_exec( $curl );
+		$response = '';//curl_exec( $curl );
 		$err      = curl_error( $curl );
 
 		curl_close( $curl );
@@ -184,6 +187,7 @@ if ( ! function_exists( 'save_scheen_content' ) ) {
 	}
 }
 
+
 if ( ! function_exists( 'wpr_get_post_content' ) ) {
 	/**
 	 * It takes a post ID, and returns the post content as a full HTML document
@@ -221,5 +225,34 @@ if ( ! function_exists( 'wpr_hide_php_errors' ) ) {
 	function wpr_hide_php_errors() {
 		error_reporting( 0 );
 		ini_set( 'display_errors', false );
+	}
+}
+
+
+if ( ! function_exists( 'wpr_auth_api_user_id' ) ) {
+	/**
+	 * If the user is logged in, return the user ID. If not, return false
+	 *
+	 * @param \WP_REST_Request request The request object.
+	 *
+	 * @return int|false
+	 */
+	function wpr_auth_api_user_id( \WP_REST_Request $request ) {
+
+		$attrs  = $request->get_attributes();
+		$params = $request->get_params();
+
+		$user_id = ( ! empty( $params['user_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['user_id'] ) : 0 );
+
+		if ( isset( $attrs['login_user_id'] ) && $attrs['login_user_id'] > 0 ) {
+			return $attrs['login_user_id'];
+		}
+
+		if ( class_exists( 'Jwt_Auth_Public' ) ) {
+			$jwt_auth_public = new Jwt_Auth_Public( 'jwt-auth', '1.1.0' );
+			return $jwt_auth_public->determine_current_user( $user_id );
+		}
+
+		return false;
 	}
 }

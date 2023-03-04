@@ -122,4 +122,4 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 
 endif;
 
-add_action( 'plugins_loaded', array( Rest_Api_WordPress::class, 'instance' ) );
+add_action( 'plugins_loaded', array( Rest_Api_WordPress::class, 'instance' ), 100 );
