@@ -14,6 +14,7 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 
 		private static $instance;
 		public $update_cart;
+		private $simple_jwt_client;
 
 		public static function instance() {
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WooCommerce ) ) {
@@ -30,7 +31,6 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 		 */
 		public function includes() {
 			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/cart/class-update-cart.php' );
-
 			$this->update_cart = new Update_Cart;
 		}
 
@@ -47,9 +47,8 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 				'rest-api-wordpress',
 				'/wpr-test-route',
 				array(
-					'methods'       => 'GET',
-					'callback'      => array( $this, 'wpr_get_woocommerce_test_route_callback' ),
-					'login_user_id' => get_current_user_id(),
+					'methods'  => 'GET',
+					'callback' => array( $this, 'wpr_get_woocommerce_test_route_callback' ),
 				)
 			);
 
@@ -94,27 +93,24 @@ if ( ! class_exists( 'Rest_Api_WooCommerce' ) ) :
 				'rest-api-wordpress',
 				'/wpr-get-cart',
 				array(
-					'methods'       => 'POST',
-					'callback'      => array( $this, 'wpr_get_cart_callback' ),
-					'login_user_id' => get_current_user_id(),
+					'methods'  => 'POST',
+					'callback' => array( $this, 'wpr_get_cart_callback' ),
 				)
 			);
 			$server->register_route(
 				'rest-api-wordpress',
 				'/wpr-update-cart',
 				array(
-					'methods'       => 'POST',
-					'callback'      => array( $this, 'wpr_update_cart_callback' ),
-					'login_user_id' => get_current_user_id(),
+					'methods'  => 'POST',
+					'callback' => array( $this, 'wpr_update_cart_callback' ),
 				)
 			);
 			$server->register_route(
 				'rest-api-wordpress',
 				'/wpr-add-to-cart',
 				array(
-					'methods'       => 'POST',
-					'callback'      => array( $this, 'wpr_add_to_cart_callback' ),
-					'login_user_id' => get_current_user_id(),
+					'methods'  => 'POST',
+					'callback' => array( $this, 'wpr_add_to_cart_callback' ),
 				)
 			);
 

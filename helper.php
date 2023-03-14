@@ -223,8 +223,8 @@ if ( ! function_exists( 'wpr_hide_php_errors' ) ) {
 	 * It hides PHP errors.
 	 */
 	function wpr_hide_php_errors() {
-		error_reporting( 0 );
-		ini_set( 'display_errors', false );
+		// error_reporting( 0 );
+		// ini_set( 'display_errors', false );
 	}
 }
 
@@ -239,18 +239,40 @@ if ( ! function_exists( 'wpr_auth_api_user_id' ) ) {
 	 */
 	function wpr_auth_api_user_id( \WP_REST_Request $request ) {
 
-		$attrs  = $request->get_attributes();
+		$protocol = ( isset( $_SERVER['HTTPS'] ) && 'on' === $_SERVER['HTTPS'] ? 'https://' : 'http://' );
+
 		$params = $request->get_params();
+		$bearer = preg_replace( '/[^a-zA-Z0-9\.\-\_\s]/i', '', $request->get_header( 'Authorization' ) );
+		$url    = $protocol . $_SERVER['HTTP_HOST'] . '/wp-json/simple-jwt-login/v1/auth/validate';
 
 		$user_id = ( ! empty( $params['user_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['user_id'] ) : 0 );
 
-		if ( isset( $attrs['login_user_id'] ) && $attrs['login_user_id'] > 0 ) {
-			return $attrs['login_user_id'];
-		}
+		$ch = curl_init();
 
-		if ( class_exists( 'Jwt_Auth_Public' ) ) {
-			$jwt_auth_public = new Jwt_Auth_Public( 'jwt-auth', '1.1.0' );
-			return $jwt_auth_public->determine_current_user( $user_id );
+		curl_setopt_array(
+			$ch,
+			array(
+				CURLOPT_URL            => $url,
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_FOLLOWLOCATION => true,
+				CURLOPT_ENCODING       => '',
+				CURLOPT_MAXREDIRS      => 10,
+				CURLOPT_TIMEOUT        => 300,
+				CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+				CURLOPT_CUSTOMREQUEST  => 'POST',
+				CURLOPT_HTTPHEADER     => array(
+					'Authorization: ' . $bearer,
+					'content-type: application/json',
+				),
+			)
+		);
+
+		$result = curl_exec( $ch );
+		curl_close( $ch );
+
+		if ( ! empty( $result ) ) {
+			$user_data = json_decode( $result );
+			return ( $user_data->success && $user_data->data->user->ID === $user_id ? $user_id : false );
 		}
 
 		return false;
