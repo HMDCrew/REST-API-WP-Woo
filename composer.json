@@ -6,7 +6,8 @@
         }
     },
     "require": {
-        "stripe/stripe-php": "^9.6"
+        "stripe/stripe-php": "^9.6",
+        "nicumicle/simple-jwt-login-client-php": "^1.0"
     },
     "license": "MIT",
     "autoload": {

@@ -9,16 +9,6 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 
 	class Update_Cart {
 
-		private static $instance;
-
-		public static function instance() {
-			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Update_Cart ) ) {
-				self::$instance = new Update_Cart;
-			}
-
-			return self::$instance;
-		}
-
 		/**
 		 * It updates the quantity of a product in the cart
 		 *
@@ -26,7 +16,7 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 		 *
 		 * @return bool
 		 */
-		private function update_item_qty( mixed $item ) {
+		private function update_item_qty( $item ) {
 
 			$qty = preg_replace( '/[^0-9\.\,]/', '', filter_var( $item['quantity'], FILTER_SANITIZE_NUMBER_INT ) );
 			$key = preg_replace( '/[^a-zA-Z0-9\-\_\.\,]/', '', $item['key'] );
@@ -42,6 +32,7 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 
 			return false;
 		}
+
 
 		/**
 		 * It takes a user ID and an array of items, and updates the cart for that user with the items in the
@@ -68,6 +59,7 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 			);
 		}
 
+
 		/**
 		 * It removes the 'data' key from the  array
 		 *
@@ -80,6 +72,7 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 			return array_diff_key( $cart_product, array_flip( $remove ) );
 		}
 
+
 		/**
 		 * It takes a product array and a product object, and returns a product array with some extra data
 		 *
@@ -88,7 +81,7 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 		 *
 		 * @return array product is being returned.
 		 */
-		private function prepare_api_product( array $product, mixed $data ) {
+		private function prepare_api_product( array $product, $data ) {
 
 			$image = wp_get_attachment_image_src( get_post_thumbnail_id( $product['product_id'] ), 'single-post-thumbnail' );
 
@@ -101,6 +94,7 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 			return $product;
 		}
 
+
 		/**
 		 * It prepares the cart for the API.
 		 *
@@ -111,7 +105,7 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 		 *
 		 * @return array cart_callback is being returned.
 		 */
-		private function prepare_api_cart( mixed $cart, array $remove_product_key_content, array $cart_callback = array() ) {
+		private function prepare_api_cart( $cart, array $remove_product_key_content, array $cart_callback = array() ) {
 
 			foreach ( $cart as $key => $cart_product ) {
 				$cart_callback[ $key ] = $this->prepare_api_product(
@@ -121,6 +115,27 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 			}
 
 			return $cart_callback;
+		}
+
+		/**
+		 * It gets the user meta cart api.
+		 *
+		 * @param int user_id The user ID of the user whose cart you want to retrieve.
+		 * @param array cart The cart array.
+		 *
+		 * @return array cart.
+		 */
+		private function get_user_meta_cart_api( int $user_id, array $cart = array() ) {
+
+			$meta_cart = get_user_meta( $user_id, '_woocommerce_persistent_cart_1', true );
+
+			if ( isset( $meta_cart['cart'] ) ) {
+				return array_values(
+					$this->prepare_api_cart( $meta_cart['cart'], array( 'data' ) )
+				);
+			}
+
+			return $cart;
 		}
 
 		/**
@@ -134,13 +149,50 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 
 			WC()->customer = new WC_Customer( $user_id, true );
 
+			$wc_cart = WC()->cart->get_cart();
+			$cart    = array();
+
+			if ( ! empty( $wc_cart ) ) {
+
+				$cart = array_values(
+					$this->prepare_api_cart( $wc_cart, array( 'data' ) )
+				);
+			}
+
 			return array(
 				'user_id' => $user_id,
-				'items'   => array_values(
-					$this->prepare_api_cart( WC()->cart->get_cart(), array( 'data' ) )
-				),
+				'items'   => ! empty( $cart ) ? $cart : $this->get_user_meta_cart_api( $user_id ),
 			);
 		}
+
+
+		/**
+		 * It updates the user meta data for the cart
+		 *
+		 * @param int user_id The user ID of the user whose cart you want to update.
+		 * @param array cart The cart object "WC()->cart->get_cart()".
+		 *
+		 * @return array cart items is being returned.
+		 */
+		private function update_meta_cart( int $user_id, array $cart ) {
+
+			$cart_for_meta = $this->prepare_api_cart(
+				$cart,
+				array(
+					'line_tax_data',
+					'line_subtotal',
+					'line_subtotal_tax',
+					'line_total',
+					'line_tax',
+					'data',
+				)
+			);
+
+			update_user_meta( $user_id, '_woocommerce_persistent_cart_1', array( 'cart' => $cart_for_meta ) );
+
+			return array_values( $cart_for_meta );
+		}
+
 
 		/**
 		 * It adds a product to the cart of a user
@@ -159,24 +211,36 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 				WC()->customer = new WC_Customer( $user_id, true );
 				$cart_item_key = WC()->cart->add_to_cart( $product_id, $qty, $variation_id );
 
-				$cart_for_meta = $this->prepare_api_cart(
-					WC()->cart->get_cart(),
-					array(
-						'line_tax_data',
-						'line_subtotal',
-						'line_subtotal_tax',
-						'line_total',
-						'line_tax',
-						'data',
-					)
-				);
-
-				update_user_meta( $user_id, '_woocommerce_persistent_cart_1', array( 'cart' => $cart_for_meta ) );
-
 				return array(
 					'user_id'       => $user_id,
 					'cart_item_key' => $cart_item_key,
-					'items'         => array_values( $cart_for_meta ),
+					'items'         => $this->update_meta_cart( $user_id, WC()->cart->get_cart() ),
+				);
+			}
+
+			return false;
+		}
+
+
+		/**
+		 * It removes a product from the cart of a user
+		 *
+		 * @param int user_id The user ID of the user whose cart you want to update.
+		 * @param string cart_item_key The cart item key to remove.
+		 */
+		public function wpr_wc_remove_item_cart( int $user_id, string $cart_item_key ) {
+
+			if ( $user_id > 0 && ! empty( $cart_item_key ) ) {
+
+				WC()->customer = new WC_Customer( $user_id, true );
+
+				return (
+					WC()->cart->remove_cart_item( $cart_item_key )
+						? array(
+							'user_id' => $user_id,
+							'items'   => $this->update_meta_cart( $user_id, WC()->cart->get_cart() ),
+						)
+						: false
 				);
 			}
 
@@ -186,4 +250,3 @@ if ( ! class_exists( 'Update_Cart' ) ) :
 
 endif;
 
-Update_Cart::instance();

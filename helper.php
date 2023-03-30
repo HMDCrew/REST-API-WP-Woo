@@ -239,40 +239,24 @@ if ( ! function_exists( 'wpr_auth_api_user_id' ) ) {
 	 */
 	function wpr_auth_api_user_id( \WP_REST_Request $request ) {
 
+		$params   = $request->get_params();
 		$protocol = ( isset( $_SERVER['HTTPS'] ) && 'on' === $_SERVER['HTTPS'] ? 'https://' : 'http://' );
 
-		$params = $request->get_params();
-		$bearer = preg_replace( '/[^a-zA-Z0-9\.\-\_\s]/i', '', $request->get_header( 'Authorization' ) );
-		$url    = $protocol . $_SERVER['HTTP_HOST'] . '/wp-json/simple-jwt-login/v1/auth/validate';
+		$bearer_full = preg_replace( '/[^a-zA-Z0-9\.\-\_\s]/i', '', $request->get_header( 'Authorization' ) );
+		$bearer      = str_replace( 'Bearer ', '', $bearer_full );
+		$url         = $protocol . $_SERVER['HTTP_HOST'];
 
 		$user_id = ( ! empty( $params['user_id'] ) ? preg_replace( '/[^0-9]/i', '', $params['user_id'] ) : 0 );
 
-		$ch = curl_init();
+		$simple_jwt_login = new \SimpleJwtLoginClient\SimpleJwtLoginClient( $url, '/simple-jwt-login/v1' );
+		$result           = $simple_jwt_login->validateToken( $bearer );
 
-		curl_setopt_array(
-			$ch,
-			array(
-				CURLOPT_URL            => $url,
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_ENCODING       => '',
-				CURLOPT_MAXREDIRS      => 10,
-				CURLOPT_TIMEOUT        => 300,
-				CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
-				CURLOPT_CUSTOMREQUEST  => 'POST',
-				CURLOPT_HTTPHEADER     => array(
-					'Authorization: ' . $bearer,
-					'content-type: application/json',
-				),
-			)
-		);
-
-		$result = curl_exec( $ch );
-		curl_close( $ch );
-
-		if ( ! empty( $result ) ) {
-			$user_data = json_decode( $result );
-			return ( $user_data->success && $user_data->data->user->ID === $user_id ? $user_id : false );
+		if ( ! empty( $result ) && $result['success'] && $result['data']['user']['ID'] === $user_id ) {
+			return $user_id;
+		} else {
+			// $simple_jwt_login = new \SimpleJwtLoginClient\SimpleJwtLoginClient( 'https://simplejwtlogin.com', '/simple-jwt-login/v1' );
+			// $result           = $simple_jwt_login->refreshToken( 'your JWT here', 'AUTH CODE' );
+			// $token = $result['data']['jwt'],
 		}
 
 		return false;

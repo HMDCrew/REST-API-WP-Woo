@@ -3,7 +3,7 @@
  * Plugin Name: REST API WP/Woo
  * Plugin URI: #
  * Description:
- * Version: 0.0.4
+ * Version: 0.0.5
  * Author: Andrei Leca
  * Author URI:
  * Text Domain: WordPress
@@ -27,7 +27,6 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 			if ( ! isset( self::$instance ) && ! ( self::$instance instanceof Rest_Api_WordPress ) ) {
 				self::$instance = new Rest_Api_WordPress;
 				self::$instance->constants();
-				self::$instance->hooks();
 				self::$instance->includes();
 			}
 
@@ -43,7 +42,7 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 
 			// Plugin version
 			if ( ! defined( 'REST_API_WORDPRESS_PLUGIN_VERSION' ) ) {
-				define( 'REST_API_WORDPRESS_PLUGIN_VERSION', '0.0.1' );
+				define( 'REST_API_WORDPRESS_PLUGIN_VERSION', '0.0.5' );
 			}
 
 			// Plugin file
@@ -88,20 +87,6 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 			}
 		}
 
-		public function hooks() {
-			add_filter( 'jwt_auth_token_before_dispatch', array( $this, 'jwt_auth_function' ), 10, 2 );
-		}
-
-		/**
-		 * Insert some additional data to the JWT Auth plugin
-		 */
-		public function jwt_auth_function( $data, $user ) {
-			$data['user_role'] = $user->roles;
-			$data['user_id']   = $user->ID;
-			$data['avatar']    = get_avatar_url( $user->ID );
-			return $data;
-		}
-
 		/**
 		 * It includes the files that are required for the plugin to work.
 		 */
@@ -110,13 +95,17 @@ if ( ! class_exists( 'Rest_Api_Wordpress' ) ) :
 				require_once( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'vendor/autoload.php' );
 			}
 
-			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-rest-api-woocommerce.php' );
-			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-rest-api-wordpresswp.php' );
-			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'auth/class-registration-api-wordpresswp.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_DIR_PATH . 'inc/class-update-cart.php' );
 
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-rest-api-woocommerce.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'woocommerce/class-wpr-wc-api-order.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'wordpress/class-rest-api-wordpresswp.php' );
+			require_once( REST_API_WORDPRESS_PLUGIN_CLASSES . 'auth/class-user-role-api.php' );
+
+			\User_Role_Api::instance();
 			\Rest_Api_WooCommerce::instance();
 			\Rest_Api_WordpressWP::instance();
-			\Registration_Api_WordpressWP::instance();
+			\WPR_WC_API_Order::instance();
 		}
 	}
 

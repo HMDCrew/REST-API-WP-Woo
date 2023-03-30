@@ -86,23 +86,26 @@ if ( ! class_exists( 'Rest_Api_Post_Type' ) ) :
 		 * @return WP_Post post object is being returned.
 		 */
 		private function clean_unused_values_post( \WP_Post $post ) {
-			unset( $post->post_author );
-			unset( $post->post_date );
-			unset( $post->post_date_gmt );
-			unset( $post->post_content );
-			unset( $post->post_status );
-			unset( $post->post_password );
-			unset( $post->to_ping );
-			unset( $post->pinged );
-			unset( $post->post_modified );
-			unset( $post->post_modified_gmt );
-			unset( $post->post_content_filtered );
-			unset( $post->menu_order );
-			unset( $post->post_mime_type );
-			unset( $post->comment_count );
-			unset( $post->filter );
-			unset( $post->comment_status );
-			unset( $post->ping_status );
+
+			unset(
+				$post->post_author,
+				$post->post_date,
+				$post->post_date_gmt,
+				$post->post_content,
+				$post->post_status,
+				$post->post_password,
+				$post->to_ping,
+				$post->pinged,
+				$post->post_modified,
+				$post->post_modified_gmt,
+				$post->post_content_filtered,
+				$post->menu_order,
+				$post->post_mime_type,
+				$post->comment_count,
+				$post->filter,
+				$post->comment_status,
+				$post->ping_status
+			);
 
 			return $post;
 		}
